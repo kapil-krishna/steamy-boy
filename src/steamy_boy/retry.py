@@ -45,4 +45,24 @@ def call_with_retry[T](
 
     `sleep` and `random` are injected so tests can run instantly and deterministically.
     """
-    raise NotImplementedError
+
+    if max_attempts < 1:
+        raise ValueError("Max attempts must be greater than 0")
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return operation()
+        except RetryableError as e:
+            if attempt >= max_attempts:
+                raise
+
+            if e.retry_after is not None:
+                delay = e.retry_after
+            else:
+                delay = random() * min(max_delay, base_delay * 2 ** (attempt - 1))
+
+            logger.warning(
+                "Attempt %d of %d failed (%s), retrying in %.1fs", attempt, max_attempts, e, delay
+            )
+
+            sleep(delay)
