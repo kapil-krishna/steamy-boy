@@ -1,0 +1,39 @@
+[project]
+name = "steamy-boy"
+version = "0.1.0"
+description = "Answers questions about a game's Steam reviews and patch notes, with evidence"
+readme = "README.md"
+authors = [
+    { name = "Kapil Krishna", email = "53826156+kapil-krishna@users.noreply.github.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "httpx>=0.28.1",
+    "psycopg[binary]>=3.3.8",
+    "pydantic>=2.14.3",
+]
+
+[project.scripts]
+steamy-boy = "steamy_boy.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4",
+    "ruff>=0.14",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.1,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers"]
+markers = ["integration: needs a running Postgres (docker compose up -d); skipped if unreachable"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# pycodestyle, pyflakes, isort, bugbear, pyupgrade, simplify
+select = ["E", "F", "I", "B", "UP", "SIM"]

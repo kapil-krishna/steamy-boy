@@ -76,7 +76,7 @@ Each entry records its status, the context, the decision, the reasons, the alter
 **Rejected:**
 - **SQLAlchemy + Alembic:** more setup, and the abstraction hides the queries.
 
-**Consequences:** mapping rows to Pydantic models is written by hand. Migrations need a small runner. Open question: write one or use an existing tool, decided at M0.
+**Consequences:** mapping rows to Pydantic models is written by hand. Migrations need a small runner (D12).
 
 ## D6: Python toolchain: uv, Pydantic, pytest, ruff (2026-11-09)
 
@@ -186,6 +186,21 @@ Every choice is justified by eval scores, cost and latency.
 - **LangChain, LangGraph, LlamaIndex:** abstraction over a small loop, which makes it harder to debug and test.
 
 **Consequences:** retries, the iteration cap (R16) and cost logging (R9) are written by hand.
+
+## D12: A hand-written migration runner (2026-11-10)
+
+**Status:** Accepted
+
+**Context:** D5 left open whether to write a migration runner or use an existing tool.
+
+**Decision:** a small runner in `db.py`. It applies the `.sql` files in filename order, each in one transaction with its row in a `schema_migrations` table.
+
+**Reasons:** it's about 30 lines, has no extra dependency and keeps migrations as plain SQL.
+
+**Rejected:**
+- **yoyo-migrations, dbmate, Flyway:** another tool or runtime to install, and none of their extra features (rollbacks, branching) is needed yet.
+
+**Consequences:** no down-migrations, so a mistake is fixed with a new migration. The runner doesn't lock against two concurrent runs, which is fine while there's one maintainer.
 
 ## Open decisions
 

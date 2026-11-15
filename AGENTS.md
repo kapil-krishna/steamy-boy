@@ -4,11 +4,24 @@ steamy-boy answers plain-English questions about a game's Steam reviews and patc
 
 ## Commands
 
-None yet. Setup, test, lint and run commands are added at M0.
+```
+uv sync                          # install dependencies
+docker compose up -d             # start Postgres (pgvector)
+uv run steamy-boy migrate        # apply pending migrations
+uv run pytest                    # all tests (integration tests skip if Postgres is down)
+uv run pytest -m "not integration"
+uv run ruff format . && uv run ruff check --fix .
+```
+
+Config: `DATABASE_URL` (see `.env.example`).
 
 ## Layout
 
-Open question: decided at M0.
+- `src/steamy_boy/`: the package (src layout, so tests run against the installed package)
+  - `steam/`: Steam API models (the validation boundary) and a thin HTTP client
+  - `migrations/`: numbered `.sql` files, applied by `db.migrate`
+  - `retry.py`, `db.py`, `cli.py`
+- `tests/`: pytest. Integration tests are marked `integration` and use a throwaway `steamy_boy_test` database.
 
 ## Conventions
 
