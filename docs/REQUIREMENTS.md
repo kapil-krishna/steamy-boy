@@ -72,10 +72,14 @@ An AI agent you ask plain-English questions about a game's Steam reviews and pat
 | R16 | Guardrails: tools are read-only, review text is treated as data, the agent has an iteration cap, and planted prompt-injection reviews are in the evals | Injection evals pass | M3 |
 | R17 | Evals: golden questions with a scorer that reports per category, run in CI with thresholds that fail the build | CI fails when a threshold is broken | M1 (first evals) / M3 (CI gate) |
 | R18 | The whole system runs with one command in Docker | `docker compose up` starts the database and the API | M0 (database) / M3 (app) |
+| R19 | Hybrid search: Postgres full-text search alongside pgvector, with the two result lists merged by reciprocal rank fusion, then the top ~30 reranked (a local cross-encoder or the model) | On R11's labelled queries, recall@10 is reported for vector only, keyword only, hybrid, and hybrid + rerank. The search tool uses the best of these, and the comparison is written up | M2 |
+| R20 | Fallback chain for model calls: timeout, retry with backoff on transient errors only, then a configured second model | A test with a fake failing primary gets its answer from the fallback, and the R9 record shows which model answered. A non-transient error (e.g. 400) is not retried | M1 |
+| R21 | Tracing: each `/ask` writes one trace with a request ID and every step (model call, tool call, arguments, result size, tokens, latency). The R9 record is the root of the trace | A failed eval question can be diagnosed from its trace alone, viewed with a CLI command | M3 |
+| R22 | MCP server exposing the agent's read-only tools, reusing the same tool definitions as the agent | Claude Code, used as the MCP client, can call every tool and answer a U1 question. A test checks that the agent and the MCP server expose the same tool list | M4 |
 
 ## Success criteria
 
-The project is done when R1–R18 pass. The headline bar:
+The project is done when R1–R22 pass. The headline bar:
 
 | Area | Criterion |
 |---|---|
@@ -110,9 +114,10 @@ The project is done when R1–R18 pass. The headline bar:
 | Milestone | Builds | Done when |
 |---|---|---|
 | **M0: data in** | Repo, Postgres (pgvector) in Docker Compose, migrations, an `ingest` command for reviews and patch notes, incremental refresh, tests | R1, R2, R4 done. Raw patch notes stored. Database part of R18 |
-| **M1: first answers** | `/ask`, agent loop, SQL tools for U1, a swappable model, cost logging, 5–10 eval questions | R5–R9 done. First evals pass |
-| **M2: themes** | Theme-tagging batch, about 100 hand labels, embeddings and vector search, quote checks | R10–R14 done |
-| **M3: patches + production polish** | Patch cleaning and patch list, before/after tools, weekly review counts, guardrails, CI eval gate, app in Docker | R3 (clean), R15–R18 done |
+| **M1: first answers** | `/ask`, agent loop, SQL tools for U1, a swappable model, fallback chain, cost logging, 5–10 eval questions | R5–R9 and R20 done. First evals pass |
+| **M2: themes** | Theme-tagging batch, about 100 hand labels, embeddings, hybrid search and reranking, quote checks | R10–R14 and R19 done |
+| **M3: patches + production polish** | Patch cleaning and patch list, before/after tools, weekly review counts, guardrails, tracing, CI eval gate, app in Docker | R3 (clean), R15–R18 and R21 done |
+| **M4: MCP** | MCP server over the existing tools, demo from Claude Code | R22 done |
 | **Later** | Open-weight vs frontier model comparison on the evals, other languages, the developer-tool direction | |
 
 ## Open questions
@@ -121,3 +126,4 @@ Undecided design choices live in [DECISIONS.md: Open decisions](DECISIONS.md#ope
 
 - Assumption: ingestion includes reviews from all purchase types (`purchase_type` = all), which gave the 5,705 count. Confirm at M0.
 - Assumption: the thresholds in R1 (1%), R10 (F1 0.80) and R11 (recall@10 0.7 on about 20 queries) are starting values. Confirm when each is first measured.
+- Assumption: the reranker is a local cross-encoder unless the model reranks better on the R19 comparison. Confirm at M2.

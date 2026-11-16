@@ -13,7 +13,7 @@ Planned design. Nothing is built yet.
                       tags, embeddings                  │
                             ▲                           │
                             │ read-only SQL             │
-                            │ and vector search         │
+                            │ and hybrid search         │
                             │                           ▼
   POST /ask ─► agent loop ─► tools          model interface ─► model provider
                    │                               ▲
@@ -26,8 +26,9 @@ Planned design. Nothing is built yet.
 
 - **Ingest** gets each source through a source interface, so a Steam API change touches one module (K1). It stores data per game (by app ID) and drops the reviewers' Steam IDs (D8).
 - **Enrich** tags and embeds reviews in batches, through the same model interface as the agent.
-- **Tools** are the only way the agent reaches data. They're read-only and compute every number (D4).
-- **The model** is reached through one interface and configured per task (D7).
+- **Tools** are the only way the agent reaches data. They're read-only and compute every number (D4). Search combines full-text and vector results, then reranks them (R19). An MCP server exposes the same tool definitions to outside clients (R22).
+- **The model** is reached through one interface and configured per task (D7). The interface owns the fallback chain (R20).
+- **Tracing:** each `/ask` writes one trace of its steps, rooted at the usage record (R21).
 
 ## Stack
 
