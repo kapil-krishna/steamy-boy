@@ -202,6 +202,32 @@ Every choice is justified by eval scores, cost and latency.
 
 **Consequences:** no down-migrations, so a mistake is fixed with a new migration. The runner doesn't lock against two concurrent runs, which is fine while there's one maintainer.
 
+## D13: Ingest checkpoints in `ingest_runs`, and soft deletes via a full run (2026-11-16)
+
+**Status:** Accepted
+
+**Context:** incremental refresh (R2) needs to know where the last run got to. Reviews arrive newest edit first and are saved a page at a time, so after a crash the newest reviews are stored but older ones aren't. Steam can't tell us which reviews were deleted.
+
+**Decision:**
+- An `ingest_runs` table records each run. A normal run fetches back to one hour before the start of the last *finished* run, then stops. The hour covers Steam's response cache.
+- Reviews are upserted, and an existing row changes only when Steam's `updated_at` is newer. News posts are inserted with `ON CONFLICT DO NOTHING`.
+- `ingest --full` reads every page. If it completes, stored reviews it didn't see get `deleted_at` set (a soft delete). It refuses if that would be more than 5% of the game's reviews. A soft-deleted review that comes back is restored.
+
+**Reasons:**
+- Using the newest stored `updated_at` as the checkpoint would make the run after a crash stop straight away and never fetch the older reviews.
+- One transaction per page means a crash loses at most one page, and the upserts make re-reading pages harmless.
+- A soft delete keeps the review, so analysis can include or exclude deleted ones. The 5% limit stops a bad Steam response from marking everything deleted.
+
+**Rejected:**
+- **Checkpoint from the newest stored review:** fails after a crash, as above.
+- **One transaction for the whole run:** a crash late in the run throws away everything, and the transaction stays open during slow network calls.
+
+**Consequences:**
+- Vote counts (`votes_up`, `votes_funny`, `weighted_vote_score`) can change without Steam changing `updated_at`, so a normal refresh doesn't pick those changes up. A full run doesn't either, because the upsert skips unedited reviews. Open question: refresh vote counts when a question needs them.
+- Deletions are found only by `ingest --full`, so it should run now and then (for example weekly).
+- Analysis queries exclude soft-deleted reviews with `WHERE deleted_at IS NULL`.
+- For a game with very few reviews, the 5% limit blocks any deletion. That's acceptable while the project covers one game.
+
 ## Open decisions
 
 | Topic | Decide at |

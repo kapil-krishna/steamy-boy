@@ -8,6 +8,8 @@ steamy-boy answers plain-English questions about a game's Steam reviews and patc
 uv sync                          # install dependencies
 docker compose up -d             # start Postgres (pgvector)
 uv run steamy-boy migrate        # apply pending migrations
+uv run steamy-boy ingest --app-id 2742830          # new and edited reviews + news (MT2)
+uv run steamy-boy ingest --app-id 2742830 --full   # every review; soft-deletes missing ones
 uv run pytest                    # all tests (integration tests skip if Postgres is down)
 uv run pytest -m "not integration"
 uv run ruff format . && uv run ruff check --fix .
@@ -20,6 +22,8 @@ Config: `DATABASE_URL` (see `.env.example`).
 - `src/steamy_boy/`: the package (src layout, so tests run against the installed package)
   - `steam/`: Steam API models (the validation boundary) and a thin HTTP client
   - `migrations/`: numbered `.sql` files, applied by `db.migrate`
+  - `ingest.py`: loads reviews and news into Postgres (the loops and rules, D13)
+  - `store.py`: the SQL for those tables (repository functions)
   - `retry.py`, `db.py`, `cli.py`
 - `tests/`: pytest. Integration tests are marked `integration` and use a throwaway `steamy_boy_test` database.
 

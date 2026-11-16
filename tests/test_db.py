@@ -6,9 +6,9 @@ pytestmark = pytest.mark.integration
 
 
 def test_all_migrations_are_recorded(conn):
-    versions = [row[0] for row in conn.execute("SELECT version FROM schema_migrations")]
+    versions = [r[0] for r in conn.execute("SELECT version FROM schema_migrations ORDER BY 1")]
 
-    assert "001_reviews_and_news.sql" in versions
+    assert versions == ["001_reviews_and_news.sql", "002_ingest_runs_and_soft_delete.sql"]
 
 
 def test_migrate_is_idempotent(conn):
