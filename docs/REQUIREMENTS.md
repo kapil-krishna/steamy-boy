@@ -124,6 +124,6 @@ The project is done when R1–R22 pass. The headline bar:
 
 Undecided design choices live in [DECISIONS.md: Open decisions](DECISIONS.md#open-decisions). Assumptions to confirm:
 
-- Assumption: ingestion includes reviews from all purchase types (`purchase_type` = all), which gave the 5,705 count. Confirm at M0.
+- Open question: on 2026-11-16, `GetAppReviews` (English, `purchase_type` = all, `filter` = updated) reported `total_reviews` = 5,138, not the 5,705 seen on 2026-11-09. All 5,138 were stored, so R1 passes against what Steam reports. The gap may come from a different parameter (such as Steam's off-topic review filter) or from how the 9 Nov count was taken. Check before quoting review totals.
 - Assumption: the thresholds in R1 (1%), R10 (F1 0.80) and R11 (recall@10 0.7 on about 20 queries) are starting values. Confirm when each is first measured.
 - Assumption: the reranker is a local cross-encoder unless the model reranks better on the R19 comparison. Confirm at M2.

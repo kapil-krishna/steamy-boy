@@ -228,11 +228,52 @@ Every choice is justified by eval scores, cost and latency.
 - Analysis queries exclude soft-deleted reviews with `WHERE deleted_at IS NULL`.
 - For a game with very few reviews, the 5% limit blocks any deletion. That's acceptable while the project covers one game.
 
+## D14: FastAPI for the `/ask` API (2026-11-16)
+
+**Status:** Accepted
+
+**Context:** the API framework was an open decision for M1, with FastAPI assumed.
+
+**Decision:** FastAPI.
+
+**Reasons:**
+- Request and response bodies are Pydantic models, which the project already uses at every boundary.
+- It's the most common Python API framework in the job ads this project targets, so experience with it is part of the goal.
+
+**Rejected:**
+- **Flask:** no built-in validation or typed request bodies.
+- **Django:** far more than one endpoint needs.
+
+**Consequences:** FastAPI's strengths and limits are reviewed once `/ask` is built.
+
+## D15: One model interface, with an adapter for OpenAI-compatible endpoints first (2026-11-16)
+
+**Status:** Accepted
+
+**Context:** D7 needs swappable models per task. The project should also run fully locally, with a local model, for anyone who clones it.
+
+**Decision:**
+- Feature code depends only on a `ChatModel` interface and provider-neutral types (`llm/`).
+- The first adapter speaks the OpenAI-compatible chat format over plain httpx. OpenRouter (cloud, many providers) and local runners (Ollama, LM Studio, llama.cpp, vLLM) all serve it, so choosing between them is config: base URL, model name, optional key, and prices.
+- Retries and the fallback model (R20) wrap any `ChatModel`, reusing `call_with_retry`. Only transient errors are retried or passed to the fallback.
+- Settings come from environment variables and `.env` through `pydantic-settings`.
+
+**Reasons:**
+- One adapter covers cloud and local, so the open-weight vs frontier comparison (D7) needs no extra code.
+- Plain httpx keeps the wire format visible and the retry policy ours. Provider SDKs add their own retries.
+
+**Rejected:**
+- **A provider SDK per provider from the start:** more code before the evals show it's needed.
+- **LiteLLM or similar:** another abstraction over a small adapter (see D11).
+
+**Consequences:**
+- Provider-specific features (for example Anthropic's prompt caching) need a native adapter behind the same interface, added if the evals or costs justify it.
+- Local models vary a lot in tool-calling reliability. The evals decide which are good enough.
+
 ## Open decisions
 
 | Topic | Decide at |
 |---|---|
-| API framework. Assumption: FastAPI | M1 |
 | Agent model and hosted provider | M1, based on evals |
 | Demo: command line or simple web page | M1 |
 | Embedding model | M2, based on retrieval evals |

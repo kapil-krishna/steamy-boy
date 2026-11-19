@@ -6,16 +6,16 @@ so a failed migration leaves nothing half-applied. Never edit an applied migrati
 add a new file instead.
 """
 
-import os
 from importlib.resources import files
 
 import psycopg
 
-DEFAULT_DATABASE_URL = "postgresql://steamy_boy:steamy_boy@localhost:5432/steamy_boy"
+from steamy_boy.config import get_settings
 
 
 def database_url() -> str:
-    return os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
+    """From `DATABASE_URL` in the environment or `.env`, else the local Docker database."""
+    return get_settings().database_url
 
 
 def connect(url: str | None = None) -> psycopg.Connection:

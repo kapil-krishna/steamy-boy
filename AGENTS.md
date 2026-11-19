@@ -15,7 +15,7 @@ uv run pytest -m "not integration"
 uv run ruff format . && uv run ruff check --fix .
 ```
 
-Config: `DATABASE_URL` (see `.env.example`).
+Config: environment variables or `.env`, read by `config.py` (see `.env.example`).
 
 ## Layout
 
@@ -24,6 +24,8 @@ Config: `DATABASE_URL` (see `.env.example`).
   - `migrations/`: numbered `.sql` files, applied by `db.migrate`
   - `ingest.py`: loads reviews and news into Postgres (the loops and rules, D13)
   - `store.py`: the SQL for those tables (repository functions)
+  - `llm/`: the model interface (`ChatModel`), the OpenAI-compatible adapter and the fallback (D15)
+  - `config.py`: settings from the environment and `.env`
   - `retry.py`, `db.py`, `cli.py`
 - `tests/`: pytest. Integration tests are marked `integration` and use a throwaway `steamy_boy_test` database.
 
