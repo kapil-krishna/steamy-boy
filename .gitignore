@@ -17,3 +17,6 @@ __pycache__/
 # Local data (bulk review data is never committed)
 data/
 *.dump
+
+# IDE (per-developer)
+.idea/
